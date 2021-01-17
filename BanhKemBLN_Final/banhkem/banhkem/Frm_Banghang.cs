@@ -142,14 +142,14 @@ namespace banhkem
         private void txtSTK_KeyPress(object sender, KeyPressEventArgs e)
         {
 
-            if (e.KeyChar == (char)13)
+            if (e.KeyChar == (char)13) // Nếu NV bán hàng nhấp enter thì sẽ thực hiện việc thanh toán + xuất hóa đơn
             {
                 btnXuatHD_Click(sender, e);
                 e.Handled = true;
                 txtSTK.Text = "";
                 return;
             }
-
+                // Chỉ được quyền nhập số ở textbox txtSTK này.
             if (!Char.IsDigit(e.KeyChar) && !Char.IsControl(e.KeyChar))
             {
                 e.Handled = true;
@@ -160,7 +160,7 @@ namespace banhkem
 
         private void txtSTK_TextChanged(object sender, EventArgs e)
         {
-
+            // Trong lúc nhân viên nhập số tiền khách trả thì hệ thống sẽ tự động tính toán số tiền thối cho khách hàng.
             Decimal tongtien = string.IsNullOrEmpty(txtTongTien.Text) ? 0 : Convert.ToDecimal(txtTongTien.Text);
             Decimal thanhtien = tongtien;
             if (txtSTK.Text.Equals(""))
@@ -202,6 +202,9 @@ namespace banhkem
 
         }
 
+        // Nếu nhấp vào sản phẩm hiện có trên danh sách đặt hàng thì sẽ mở form mới để chọn số lượng hoặc hủy chọn sản phẩm
+        // Sau khi chọn xong thì Tổng tiền sẽ tự cập nhật. 
+        // Sau khi hủy sản phẩm đã chọn thì danh sách đặt hàng sẽ tự động cập nhật lại.
         private void lstProductCart_ItemSelectionChanged(object sender, ListViewItemSelectionChangedEventArgs e)
         {
             int soluong = 0;
@@ -210,14 +213,15 @@ namespace banhkem
 
             if (e.IsSelected)
             {
-                
+                 // Nếu nhấp vào sản phẩm hiện có trên danh sách đặt hàng thì sẽ mở form mới để chọn số lượng hoặc hủy chọn sản phẩm
                 soluong = Convert.ToInt32(e.Item.SubItems[2].Text);
                 Frm_themSoluong_Mon f = new Frm_themSoluong_Mon(soluong);
                 f.ShowDialog();
                 this.Show();
                 Cursor.Current = Cursors.Arrow;
+                    // Nếu ta chọn hủy bên form kia (Frm_themSoluong_Mon) thì biến huychọnSP sẽ == 1. Ta phải ưu tiên nó trước.
                 if (f.huychonSP == 1)
-
+                     // Khi hủy chọn thì tổng tiền giảm, các textbox khác cũng tự cập nhật.
                 {
                     int sothutu = e.ItemIndex;
 
@@ -230,7 +234,8 @@ namespace banhkem
 
 
 
-
+                      // Vd: Khi hủy chọn ở vị trí thứ 3 thì trong danh sách đặt hàng: 
+                    // Các số thứ từ vị trí thứ 4 đến vị trí cuối cùng sẽ giảm xuống để lấp ô trống mà sản phẩm ta đã hủy.
                     for (int i = sothutu + 1; i < lstProductCart.Items.Count; i++)
                         lstProductCart.Items[i].Text = i.ToString();
                     lstProductCart.Items[e.ItemIndex].Selected = false;
@@ -244,12 +249,18 @@ namespace banhkem
                 }
                 else
                 {
+                // Nếu không hủy món mà đã chọn số lượng ở form kia (Frm_themSoluong_Mon) thì sẽ nhận giá trị về form
+                    // Banghang này và cập nhật tổng giá sản phẩm
                     e.Item.SubItems[2].Text = f.soluongSP_Text.ToString();
 
                     Decimal gia_lucdau = Convert.ToDecimal(e.Item.SubItems[5].Text);
                     Decimal gia_update = f.soluongSP_Text * Convert.ToDecimal(e.Item.SubItems[3].Text);
                     e.Item.SubItems[5].Text = gia_update.ToString();
-
+                        
+                    // Vd : trước khi thay đổi số lượng sản phẩm thì
+                    // Bánh kem A có số lượng :5 || Giá : 50000 => Tổng tiền lúc đó là : 250 000
+                    // Sau khi thay đổi thì số lượng hiện giờ là : 10 => Tổng tiền hiện giờ là : 500 000
+                    // Tổng tiền toàn bộ sẽ = tổng tiền sau khi thay sl của sp - tổng tiền trước đó của sp.
                     
                     tongtien += gia_update - gia_lucdau;
 
@@ -263,6 +274,7 @@ namespace banhkem
 
         private void HuyHD()
         {
+         // Đóng khung tạo hóa đơn lại. Các giá trị được làm trống
             panel6.Visible = false;
             txtHD.Text = "";
             txtSTK.Text = "0";
@@ -278,6 +290,9 @@ namespace banhkem
 
         private void btnTaohoadon_Click_1(object sender, EventArgs e)
         {
+        
+            // Mở khung hóa đơn, truy cập danh sách hóa đơn.
+            // VD: Nếu danh sách có 10 hóa đơn, thì hóa đơn tiếp theo được lập là thứ 11.
             panel6.Visible = true;
             List<HoaDon> listHD;
             listHD = BanhkemDB.HoaDons.ToList();
@@ -289,6 +304,7 @@ namespace banhkem
 
         private void ClearSP()
         {
+        // Xóa hết sản phẩm đang chọn trong danh sách đặt hàng
             lstProductCart.Items.Clear();
             order_index = 0;
             txttotalPrice.Text = "0"; tongtien = 0;
@@ -298,11 +314,11 @@ namespace banhkem
         {
             ClearSP();
         }
-
+                    // Hàm tra cứu sản phẩm (dù viết hoa hay viết thường)
         private void txtTuKhoa_TextChanged(object sender, EventArgs e)
         {
             lstProduct.Items.Clear();
-
+               // Nếu không nhập gì thì sẽ hiện toàn bộ sản phẩm
             int index = 0;
             if (txtTuKhoa.Text == "" && cbLoaiThucUong.Text == "")
             {
@@ -320,6 +336,8 @@ namespace banhkem
             
             else
             {
+            // Chuyển đổi từ khóa và toàn bộ tên sản phẩm trong danh sách thành ký tự thường rồi so sánh.
+                // Nếu từ khóa có tồn tại trong tên sản phẩm đang xét thì in ra danh sách
                 string string_temp = txtTuKhoa.Text.ToLower();
 
                 foreach (SanPham sanpham in listSP)
@@ -367,8 +385,12 @@ namespace banhkem
                 }
                 else
                 {
+                      // Tạo một danh sách chứa các biến cần thiết để in ra Report
                     List<rptCTHD> listRPCTHD = new List<rptCTHD>();
+                     // Mã hóa đơn đang là dạng string "HDXX" nên phải loại bỏ 2 chữ "HD" rồi chuyển về về dạng int
+                    // để sau này còn gán giá trị vào chi tiết hóa đơn.
                     string MaHD_temp = txtMaHD.Text.Remove(0, 2);
+                        // Thêm HD vào database
                     HoaDon hoadon_moi = new HoaDon()
                     {
                         MaNV = user.MaNV,
@@ -379,15 +401,17 @@ namespace banhkem
                     };
                     BanhkemDB.HoaDons.Add(hoadon_moi);
                     BanhkemDB.SaveChanges();
-
+                        // Chi tiết hóa đơn lấy từ danh sách đặt hàng. Nên ta phải xét toàn bộ sản phẩm trong danh sách đặt hàng.
                     for (int i = 0; i < lstProductCart.Items.Count; i++)
                     {
                         foreach (var sanPham in listSP)
-                        {
+                        {   
+                         // Vì không cho hiện mã sản phẩm nên phải qua 1 cách khác để nhận diện sản phẩm, đó là : Tên SP và kích thước.
                             if (lstProductCart.Items[i].SubItems[1].Text == sanPham.TenSP && lstProductCart.Items[i].SubItems[4].Text == sanPham.Size)
                             {
                                 int sl = Convert.ToInt32(lstProductCart.Items[i].SubItems[2].Text);
-                                
+                                  // Tạo 1 biến chi tiết của sản phẩm đang xét rồi lưu vào database, cứ như vậy đến khi hết sản phẩm 
+                                // trong giỏ hàng
                                 ChiTietHoaDon chitiethoadon_moi = new ChiTietHoaDon()
                                 {
                                     MaHD = Convert.ToInt32(MaHD_temp),
@@ -400,7 +424,8 @@ namespace banhkem
                                 
                                 BanhkemDB.ChiTietHoaDons.Add(chitiethoadon_moi);
                                 BanhkemDB.SaveChanges();
-
+                                    // Biến Report này chứa thông tin của sản phẩm. Sau khi thêm xong thì sẽ thêm nó vào danh sách
+                                // sau này cần report.
                                 rptCTHD a = new rptCTHD();
                                 a.GiaGoc = Convert.ToDecimal(lstProductCart.Items[i].SubItems[3].Text);
                                 a.SIZE = lstProductCart.Items[i].SubItems[4].Text;
@@ -413,13 +438,15 @@ namespace banhkem
 
                         }
                     }
-
+                         // Sau khi xét hết sản phẩm trong giỏ hàng thì ta gửi dữ liệu danh sách cần Report qua form Report để hiện
+                    // Report chi tiết hóa đơn.
                     FrmReportCTHoaDon f = new FrmReportCTHoaDon(hoadon_moi,listRPCTHD);
                     f.ShowDialog();
                     this.Show();
                     Cursor.Current = Cursors.Arrow;
 
                     txtSTK.Text = "0";
+                     // Sau khi xuất hóa đơn thì thông báo đã thanh toán
                     MessageBox.Show("Đã thanh toán hóa đơn");
                     ClearSP(); HuyHD();
                 }
